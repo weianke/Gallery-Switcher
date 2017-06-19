@@ -124,23 +124,76 @@
 </head>
 <body onselectstart="return false;">
 <!--禁图片背后的文字被选中onselectstart-->
-<div class="wrap">
+
+<!--2. 改写视图为 模板字符串-->
+<div class="wrap" id="wrap">
     <!--photo-wrap   负责平移和旋转-->
-    <div class="photo photo_center photo_back" onclick="turn(this)">
+    <div class="photo photo_front" onclick="turn(this)" id="photo_{{index}}">
 
         <!--photo-wrap   负责翻转-->
         <div class="photo-wrap">
             <div class="side side-front">
-                <p class="image"><img src="images/11.jpg" alt=""></p>
-                <p class="caption">千与千寻</p>
+                <p class="image"><img src="images/{{img}}" alt=""></p>
+                <p class="caption">{{caption}}</p>
             </div>
             <div class="side side-back">
-                <p class="desc">描述信息</p>
+                <p class="desc">{{desc}}</p>
             </div>
         </div>
     </div>
 </div>
+<script src="js/data.js"></script>
 <script>
+
+    //3 通用函数
+        function g(selector) {
+            var method = selector.substr(0,1) == '.' ? 'getElementsByClassName' : 'getElementById';
+            return document[method](selector.substr(1));
+        }
+
+    //随机生成一个值 ,支持取值范围 random([min,max)
+
+        function random(range) {
+            var max = Math.max(range[0],range[1]);
+            var min = Math.min(range[0],range[1]);
+
+            var diff = max - min;  //差值
+
+            var number = Math.ceil(Math.random()*diff + min);
+
+            return number;
+        }
+
+
+    // 4 输出所有的海报
+
+    var data = data;
+    
+    function addPhotos() {
+        var template = g('#wrap').innerHTML;
+        var html = [];
+        for(s in data){
+            var _html = template.replace('{{index}}',s)
+                    .replace('{{img}}',data[s].img)
+                    .replace('{{caption}}',data[s].caption)
+                    .replace('{{desc}}',data[s].desc);
+
+            html.push(_html);
+        }
+        g('#wrap').innerHTML = html.join('');
+        rsort(random([0, data.length]));
+    }
+
+    addPhotos();
+    
+    //5 排序海报
+    
+    function rsort(n) {
+        var photo_center = g('#photo_'+n);
+        photo_center.className += ' photo_center' ;
+
+    }
+
     //1 翻面控制
     function turn(elem){
         var cls = elem.className;
