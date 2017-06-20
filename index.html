@@ -19,14 +19,15 @@
 
         .wrap {
             width: 100%;
-            height: 600px;
+            height: 700px;
             position: absolute;
             top: 50%;
-            margin-top: -300px;
-            background-color: #333;
+            margin-top: -350px;
+            background: url('images/background.jpg');
             overflow: hidden;
-
+            
             -webkit-perspective: 800px;
+            -moz-perspective: 800px;
         }
 
         /*海报样式*/
@@ -36,7 +37,9 @@
             position: absolute;
             z-index: 1;
             box-shadow: 0 0 1px rgba(0, 0, 0, .01);
-        }
+            -webkit-transition:all .6s;
+            -moz-transition:all .6s;
+          }
 
         .photo .side {
             width: 100%;
@@ -46,12 +49,12 @@
             top: 0;
             right: 0;
             padding: 20px;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
             box-sizing: border-box;
         }
 
-        .photo .side-front {
 
-        }
 
         .photo .side-front .image {
             width: 100%;
@@ -95,7 +98,7 @@
             height: 100%;
 
             -webkit-transform-style: preserve-3d;
-            -webkit-transition: all 0.6s;
+            -webkit-transition: -webkit-transform 0.6s ease-in-out;
 
         }
 
@@ -119,6 +122,81 @@
 
         .photo_back .photo-wrap{
             -webkit-transform: rotateY(180deg);
+        }
+
+        /*控制样式*/
+        @font-face{
+            font-family: 'icons';
+            src:url('images/icons.woff') format('woff');
+            font-weight:normal;
+            font-size: normal;
+        }
+        .nav{
+            width: 80%;
+            height: 30px;
+            line-height: 30px;
+            position: absolute;
+            left: 10%;
+            bottom: 20px;
+            z-index: 999;
+    
+            text-align: center;
+        }
+        
+        /*普通样式*/
+        .nav .i{
+            width: 30px;
+            height: 30px;
+            display: inline-block;
+            cursor: pointer;
+            background: #aaa;
+            border-radius: 50%;
+
+            -webkit-transform: scale(.48);
+            -webkit-transition:all .5s;
+        }
+
+        .nav .i:after{
+            content: '\e600';
+            font-family: 'icons';
+            font-siez:80%;
+            display: inline-block;
+            line-height: 30px;
+            text-align: center;
+            color: #fff;
+            opacity: 0;
+        }
+
+         /*选中样式*/
+        .nav .i_current{
+            -webkit-transform: scale(0.8);
+        }
+         .nav .i_current:after{
+             opacity: 1;
+         }
+        /*背面样式*/
+        .nav .i_back{
+            -webkit-transform:rotateY(-180deg);
+            background: #555;
+        }
+
+        /*优化样式*/
+        .photo{
+            left: 50%;
+            top: 50%;
+            margin: -160px 0 0 -130px;
+        }
+
+        .photo-wrap{
+            -webkit-transform-origin: 0% 50%;
+        }
+
+        .photo_front .photo-wrap{
+            -webkit-transform: translate(0px, 0px) rotateY(0deg);
+        }
+
+        .photo_back .photo-wrap{
+            -webkit-transform: translate(260px, 0px) rotateY(180deg);
         }
     </style>
 </head>
@@ -159,7 +237,7 @@
 
             var diff = max - min;  //差值
 
-            var number = Math.ceil(Math.random()*diff + min);
+            var number = Math.ceil((Math.random()*diff + min));
 
             return number;
         }
@@ -172,6 +250,8 @@
     function addPhotos() {
         var template = g('#wrap').innerHTML;
         var html = [];
+        var nav = [];
+
         for(s in data){
             var _html = template.replace('{{index}}',s)
                     .replace('{{img}}',data[s].img)
@@ -179,28 +259,122 @@
                     .replace('{{desc}}',data[s].desc);
 
             html.push(_html);
+
+            nav.push('<span id="nav_'+s+'" onclick="turn(g(\'#photo_'+s+'\'))" class="i">&nbsp;</span>');
         }
+
+        html.push('<div class="nav">'+nav.join('')+'</div>')
         g('#wrap').innerHTML = html.join('');
         rsort(random([0, data.length]));
     }
 
     addPhotos();
+
+    //6 计算左右分区的范围 {left:{x:[min,max],y:[]},right{}}
+
+    function range(){
+        var range = {left:{x:[],y:[]},right:{x:[],y:[]}};
+
+        var wrap = {
+            w: g('#wrap').clientWidth,
+            h: g('#wrap').clientHeight
+        };
+
+        var photo = {
+            w: g('.photo')[0].clientWidth,
+            h: g('.photo')[0].clientHeight
+        };
+
+        range.wrap = wrap;
+        range.photo = photo;
+
+        range.left.x = [ 0 - photo.w, wrap.w/2- photo.w/2];
+        range.left.y = [ 0 - photo.h, wrap.h ];
+
+        range.right.x = [ wrap.w/2 + photo.w/2, wrap.w + photo.w];
+        range.right.y = range.left.y;
+        return range;
+    } 
     
     //5 排序海报
     
     function rsort(n) {
+        var _photo = g('.photo');
+        var photos = [];
+        for(var i=0;i<_photo.length;i++){
+            _photo[i].className = _photo[i].className.replace(/\s*photo_center\s*/,' ');
+
+            _photo[i].className = _photo[i].className.replace(/\s*photo_front\s*/,' ');
+
+
+            _photo[i].className = _photo[i].className.replace(/\s*photo_back\s*/,' ');
+
+
+             _photo[i].className += ' photo_front';
+             _photo[i].style.left = '';
+             _photo[i].style.top = '';
+             _photo[i].style['-webkit-transform'] = 'rotate(360deg) scale(1.3)';
+            
+            photos.push( _photo[i] );
+
+        }
+
         var photo_center = g('#photo_'+n);
-        photo_center.className += ' photo_center' ;
+        photo_center.className += ' photo_center';
+
+        photo_center = photos.splice(n,1)[0];
+
+        //把剩下的海报氛围左右区域两个部分
+        var photos_left = photos.splice(0, photos.length/2);
+        var photos_right = photos;
+
+        var ranges = range();
+        for(s in photos_left){
+            var photo = photos_left[s];
+
+            photo.style.left = random(ranges.left.x)+'px';
+            photo.style.top = random(ranges.left.y)+'px';
+
+            photo.style['-webkit-transform'] = 'rotate('+random([-150,150])+'deg) scale(1)';
+        }
+
+         for(s in photos_right){
+             var photo = photos_right[s];
+
+            photo.style.left = random(ranges.right.x)+'px';
+            photo.style.top = random(ranges.right.y)+'px';
+
+             photo.style['-webkit-transform'] = 'rotate('+random([-150,150])+'deg) scale(1)';
+        }
+
+        //控制按钮处理
+        var navs = g('.i');
+        for(var s=0;s<navs.length;s++){
+            navs[s].className = navs[s].className.replace(/i_current\s*/,' ');
+
+            navs[s].className = navs[s].className.replace(/i_back\s*/,' ');
+        }
+        g('#nav_'+n).className += ' i_current';
+
+        console.log(photos_left.length,photos_right.length)
 
     }
 
     //1 翻面控制
     function turn(elem){
         var cls = elem.className;
+        var n = elem.id.split('_')[1];
+
+        if( !/photo_center/.test(cls) ){
+            return rsort(n);
+        }   
+
         if(/photo_front/.test(cls)){
             cls = cls.replace(/photo_front/,'photo_back');
+            g('#nav_'+n).className += ' i_back';
         }else{
             cls = cls.replace(/photo_back/,'photo_front');
+            g('#nav_'+n).className = g('#nav_'+n).className.replace(/\s*i_back\s*/,' ');
         }
         return elem.className = cls;
     }
